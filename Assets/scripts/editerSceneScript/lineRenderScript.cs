@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using System;
 
 public class lineRenderScript : MonoBehaviour
 {
@@ -24,8 +26,9 @@ public class lineRenderScript : MonoBehaviour
     public Color nodeColor;
     public Color beatColor;
 
-    public float cellHeight;
-    public float cellWidth;
+    public float nodeWidth;
+    public float nodeHeight;
+    float cellHeight;
 
     float baseX = -8f;
     float baseY = -5f;
@@ -33,8 +36,16 @@ public class lineRenderScript : MonoBehaviour
 
     int node = 5;
     int beat = 4;
+    float bpm = 120f;
+    float tikTime = 0f;
+    float nextTime = 0f;
+    float playScrollSpeed = 0.5f;
 
     public GameObject noteObj;
+    public InputField bpmInput;
+    public InputField beatInput;
+    AudioSource mSource;
+    public AudioClip tik;
 
     static Material lineMaterial;
 
@@ -44,6 +55,11 @@ public class lineRenderScript : MonoBehaviour
         {
             noteStack[i] = new List<noteInfo>();
         }
+        bpmInput.onSubmit.AddListener(delegate { setBPM(bpmInput); });
+        beatInput.onSubmit.AddListener(delegate { setBeat(beatInput); });
+        cellHeight = nodeHeight / beat;
+        tikTime = 60f / bpm;
+        playScrollSpeed = nodeHeight / tikTime;
     }
 
     static void CreateLineMaterial()
@@ -93,34 +109,34 @@ public class lineRenderScript : MonoBehaviour
         GL.Begin(GL.LINES);
 
         xos += baseX;
-        yos = yos % (cellHeight * beat) + baseY;
-        node = (int)(winHeight / (cellHeight * beat)) + 2;
+        yos = yos % nodeHeight + baseY;
+        node = (int)(winHeight / nodeHeight) + 2;
 
         // row
         for (int i = 0; i < node; i++)
         {
             GL.Color(nodeColor);
-            GL.Vertex3(xos, yos + (i * cellHeight * beat), 0);
-            GL.Vertex3(xos + (float)(Col * cellWidth), yos + (i * cellHeight * beat), 0);
+            GL.Vertex3(xos, yos + (i * nodeHeight), 0);
+            GL.Vertex3(xos + (float)(Col * nodeWidth), yos + (i * nodeHeight), 0);
 
             for (int j = 1; j < beat; j++)
             {
                 GL.Color(beatColor);
-                GL.Vertex3(xos, yos + (i * cellHeight * beat) + (j * cellHeight), 0);
-                GL.Vertex3(xos + (float)(Col * cellWidth), yos + (i * cellHeight * beat) + (j * cellHeight), 0);
+                GL.Vertex3(xos, yos + (i * nodeHeight) + (j * cellHeight), 0);
+                GL.Vertex3(xos + (float)(Col * nodeWidth), yos + (i * nodeHeight) + (j * cellHeight), 0);
             }
         }
 
         GL.Color(nodeColor);
-        GL.Vertex3(xos, yos + (node * cellHeight * beat), 0);
-        GL.Vertex3(xos + (float)(Col * cellWidth), yos + (node * cellHeight * beat), 0);
+        GL.Vertex3(xos, yos + (node * nodeHeight), 0);
+        GL.Vertex3(xos + (float)(Col * nodeWidth), yos + (node * nodeHeight), 0);
 
         // col
         for (int i = 0; i <= Col; i++)
         {
             GL.Color(nodeColor);
-            GL.Vertex3(xos + (i * cellWidth), yos, 0);
-            GL.Vertex3(xos + (i * cellWidth), yos + (cellHeight * node * beat), 0);
+            GL.Vertex3(xos + (i * nodeWidth), yos, 0);
+            GL.Vertex3(xos + (i * nodeWidth), yos + (nodeHeight * node), 0);
         }
 
         GL.End();
@@ -132,23 +148,11 @@ public class lineRenderScript : MonoBehaviour
         float scroll = Input.GetAxis("Mouse ScrollWheel");
         if (scroll != 0f)
         {
-            yOffset += scroll * 3;
+            yOffset += scroll * -3;
             if (yOffset > 0)
                 yOffset = 0;
 
-            float xos = xOffset + baseX;
-            float yos = yOffset + baseY;
-
-            for (int i = 0; i < 6; i++)
-            {
-                for (int j = 0; j < stackCount[i]; j++)
-                {
-                    noteInfo note = noteStack[i][j];
-                    float noteX = note.line * cellWidth + xos;
-                    float noteY = (note.node * beat + note.pos) * cellHeight + yos;
-                    note.inst.transform.position = new Vector3(noteX, noteY, -1);
-                }
-            }
+            noteRelocate();
         }
 
         if (Input.GetMouseButtonDown(0))
@@ -158,15 +162,14 @@ public class lineRenderScript : MonoBehaviour
             float xos = xOffset + baseX;
             float yos = yOffset + baseY;
 
-            if (pos[0] >= xos && pos[0] <= xos + (6 * cellWidth))
+            if (pos[0] >= xos && pos[0] <= xos + (6 * nodeWidth))
             {
-
-                int _line = (int)((pos[0] - xos) / cellWidth);
-                int _node = (int)((pos[1] - yos) / (cellHeight * beat));
+                int _line = (int)((pos[0] - xos) / nodeWidth);
+                int _node = (int)((pos[1] - yos) / nodeHeight);
                 int _pos = (int)((pos[1] - yos) / cellHeight) % beat;
 
-                float noteX = _line * cellWidth + xos;
-                float noteY = (_node * beat + _pos) * cellHeight + yos;
+                float noteX = _line * nodeWidth + xos;
+                float noteY = (_node * nodeHeight) + (_pos * cellHeight) + yos;
 
                 Vector3 notePos = new Vector3(noteX, noteY, -1);
                 GameObject inst = Instantiate(noteObj);
@@ -188,9 +191,24 @@ public class lineRenderScript : MonoBehaviour
                 noteScript.pos = _pos;
                 noteScript.lrs = this;
 
-                Debug.Log(pos);
-                Debug.Log(notePos);
-                Debug.Log(createdNote.node + " " + createdNote.line + " " + createdNote.beat + " " + createdNote.pos);
+            }
+        }
+    }
+
+    private void noteRelocate()
+    {
+        float xos = xOffset + baseX;
+        float yos = yOffset + baseY;
+
+        for (int i = 0; i < 6; i++)
+        {
+            for (int j = 0; j < stackCount[i]; j++)
+            {
+                noteInfo note = noteStack[i][j];
+                float _cellHeight = nodeHeight / note.beat;
+                float noteX = note.line * nodeWidth + xos;
+                float noteY = (note.node * nodeHeight) + (note.pos * _cellHeight) + yos;
+                note.inst.transform.position = new Vector3(noteX, noteY, -1);
             }
         }
     }
@@ -207,6 +225,29 @@ public class lineRenderScript : MonoBehaviour
                 Destroy(noteObj);
                 break;
             }
+        }
+    }
+
+    private void setBPM(InputField input)
+    {
+        if (float.TryParse(input.text, out float _bpm))
+        {
+            Debug.Log(_bpm);
+            bpm = _bpm;
+            tikTime = 60f / bpm;
+            playScrollSpeed = nodeHeight / tikTime;
+            nextTime = 0f;
+        }
+    }
+
+    private void setBeat(InputField input)
+    {
+        if (Int32.TryParse(input.text, out int _beat))
+        {
+            Debug.Log(_beat);
+            beat = _beat;
+            cellHeight = nodeHeight / beat;
+            noteRelocate();
         }
     }
 }
