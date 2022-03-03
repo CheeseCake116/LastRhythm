@@ -12,6 +12,7 @@ public class editMetronomeScript : MonoBehaviour
     {
         mSource = GetComponent<AudioSource>();
         mSource.clip = tik;
+        // 재생은 musicManagerScript.Update()에서 재생
     }
 
     private void Update()

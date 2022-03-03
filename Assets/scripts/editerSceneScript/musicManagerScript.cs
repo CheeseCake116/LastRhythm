@@ -7,44 +7,47 @@ using System;
 public class musicManagerScript : MonoBehaviour
 {
     AudioSource mSource;
+
     public AudioClip[] musics;
-    public float[] bpms;
-    public int[] Offsets;
-    public InputField offsetInput;
-    public InputField bpmInput;
-    public InputField beatInput;
-    public Button playButton;
-    public Button stopButton;
-    public Dropdown musicList;
-    public GameObject waveForm;
-    waveFormScript wfScript;
-    public int selectedMusic = 0;
+    float[] bpms;
+    int[] Offsets;
+    [SerializeField] InputField offsetInput;
+    [SerializeField] InputField bpmInput;
+    [SerializeField] InputField beatInput;
+    [SerializeField] InputField nodeInput;
+    [SerializeField] Button playButton;
+    [SerializeField] Button stopButton;
+    [SerializeField] Dropdown musicList;
+    int selectedMusic = 0;
     bool playStatus = false;
 
-    public GameObject metronome;
+    [SerializeField] GameObject metronome;
     AudioSource metAudioSource;
+    [SerializeField] GameObject gridObj;
+    lineRenderScript gridScript;
     float tikTime;
     float nextTime;
 
     // Start is called before the first frame update
     void Start()
     {
+
         bpms = new float[10]
         {
-            144,
-            120,
-            142,
+            144f,
+            120f,
+            142f,
             149.5f,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
+            120f,
+            120f,
+            120f,
+            120f,
+            120f,
+            120f
         };
         Offsets = new int[10]
         {
-            25,
+            60,
             0,
             49,
             34,
@@ -58,7 +61,6 @@ public class musicManagerScript : MonoBehaviour
 
         mSource = GetComponent<AudioSource>();
         mSource.clip = musics[selectedMusic];
-        wfScript = waveForm.GetComponent<waveFormScript>();
         settingReload();
 
         bpmInput.onSubmit.AddListener(delegate { setBpm(); });
@@ -68,6 +70,8 @@ public class musicManagerScript : MonoBehaviour
         musicList.onValueChanged.AddListener(delegate { SelectMusic(); });
 
         metAudioSource = metronome.GetComponent<AudioSource>();
+
+        gridScript = gridObj.GetComponent<lineRenderScript>();
     }
 
     // Update is called once per frame
@@ -100,7 +104,7 @@ public class musicManagerScript : MonoBehaviour
         {
             Debug.Log(_offset);
             Offsets[selectedMusic] = _offset;
-            nextTime = Offsets[selectedMusic] / 1000;
+            nextTime = Offsets[selectedMusic] * 0.001f;
         }
     }
 
@@ -124,6 +128,8 @@ public class musicManagerScript : MonoBehaviour
         mSource.Stop();
         playStatus = false;
         nextTime = 0f;
+        gridScript.yOffset = 0;
+        gridScript.noteRelocate();
     }
 
     void SelectMusic()
@@ -131,7 +137,6 @@ public class musicManagerScript : MonoBehaviour
         musicStop();
         selectedMusic = musicList.value;
         mSource.clip = musics[selectedMusic];
-        wfScript.GetWaveform();
         settingReload();
     }
 

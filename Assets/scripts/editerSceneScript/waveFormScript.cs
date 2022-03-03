@@ -7,13 +7,13 @@ using UnityEngine;
 public class waveFormScript : MonoBehaviour
 {
 
-    int width = 1024;
-    int height = 200;
+    int width = 600;
+    int height = 1024;
     public Color background = Color.black;
     public Color foreground = Color.yellow;
     public GameObject musicMng;
+    public float bpm;
 
-    private AudioSource aud = null;
     private SpriteRenderer sprend = null;
     private int samplesize;
     private float[] samples = null;
@@ -24,10 +24,11 @@ public class waveFormScript : MonoBehaviour
     {
         // reference components on the gameobject
         sprend = this.GetComponent<SpriteRenderer>();
+        transform.position = new Vector3(-8f, -5f, 0);
 
-        Texture2D texwav = GetWaveform();
+        /*Texture2D texwav = GetWaveform();
         Rect rect = new Rect(Vector2.zero, new Vector2(width, height));
-        sprend.sprite = Sprite.Create(texwav, rect, Vector2.zero);
+        sprend.sprite = Sprite.Create(texwav, rect, Vector2.zero);*/
     }
 
     // Update is called once per frame
@@ -36,24 +37,26 @@ public class waveFormScript : MonoBehaviour
         
     }
 
-    public Texture2D GetWaveform()
+    // This method is called by lineRenderScript.cs
+    public void GetWaveform(AudioSource aud, float bpm, float nodeHeight)
     {
-        aud = musicMng.GetComponent<AudioSource>();
-        Debug.Log(aud.clip);
+        //aud = musicMng.GetComponent<AudioSource>();
+        height = (int)(aud.clip.length * bpm / 60 * nodeHeight + 1) * 10;
+        Debug.Log("aud : " + aud.clip.length + ", bpm : " + bpm + "nodeHeight : " + nodeHeight);
 
-        int halfheight = height / 2;
-        float heightscale = (float)height * 0.75f;
+        int halfwidth = width / 2;
+        float widthscale = (float)width * 0.75f;
 
         // get the sound data
         Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
-        waveform = new float[width];
+        waveform = new float[height];
 
         samplesize = aud.clip.samples * aud.clip.channels;
         samples = new float[samplesize];
         aud.clip.GetData(samples, 0);
 
-        int packsize = (samplesize / width);
-        for (int w = 0; w < width; w++)
+        int packsize = (samplesize / height);
+        for (int w = 0; w < height; w++)
         {
             waveform[w] = Mathf.Abs(samples[w * packsize]);
         }
@@ -69,17 +72,20 @@ public class waveFormScript : MonoBehaviour
         }
 
         // 2 - plot
-        for (int x = 0; x < width; x++)
+        for (int y = 0; y < height; y++)
         {
-            for (int y = 0; y < waveform[x] * heightscale; y++)
+            for (int x = 0; x < waveform[y] * widthscale; x++)
             {
-                tex.SetPixel(x, halfheight + y, foreground);
-                tex.SetPixel(x, halfheight - y, foreground);
+                tex.SetPixel(halfwidth + x, y, foreground);
+                tex.SetPixel(halfwidth - x, y, foreground);
             }
         }
 
         tex.Apply();
 
-        return tex;
+        //Rect rect = new Rect(Vector2.zero, new Vector2(width, height));
+        //sprend.sprite = Sprite.Create(tex, rect, Vector2.zero);
+        
+        // return tex;
     }
 }
