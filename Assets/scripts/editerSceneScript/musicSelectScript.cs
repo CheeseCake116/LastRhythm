@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class musicSelectScript : MonoBehaviour
+public class MusicSelectScript : MonoBehaviour
 {
     [Header("Dropdown")]
     public Dropdown dropdown;
     public GameObject musicMng;
-    musicManagerScript musicMngScript;
+    MusicManagerScript musicMngScript;
     string[] optionTexts =
     {
+        "노래 선택",
         "로그인",
         "로비",
         "전투 1",
@@ -26,7 +27,7 @@ public class musicSelectScript : MonoBehaviour
 
     void Start()
     {
-        musicMngScript = musicMng.GetComponent<musicManagerScript>();
+        musicMngScript = musicMng.GetComponent<MusicManagerScript>();
         musics = musicMngScript.musics;
 
         SetDropdownOptions();
@@ -40,10 +41,13 @@ public class musicSelectScript : MonoBehaviour
     private void SetDropdownOptions()// Dropdown 목록 생성
     {
         dropdown.options.Clear();
-        for (int i = 0; i < optionTexts.Length; i++)
+        Dropdown.OptionData option = new Dropdown.OptionData();
+        option.text = optionTexts[0];
+        dropdown.options.Add(option);
+        for (int i = 1; i < optionTexts.Length; i++)
         {
-            Dropdown.OptionData option = new Dropdown.OptionData();
-            option.text = (i + 1).ToString() + ". " + optionTexts[i];
+            option = new Dropdown.OptionData();
+            option.text = i.ToString() + ". " + optionTexts[i];
             dropdown.options.Add(option);
         }
     }

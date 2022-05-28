@@ -2,90 +2,38 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(AudioSource))]
 [RequireComponent(typeof(Sprite))]
-public class waveFormScript : MonoBehaviour
+public class WaveFormScript : MonoBehaviour
 {
-
-    int width = 600;
-    int height = 1024;
-    public Color background = Color.black;
-    public Color foreground = Color.yellow;
-    public GameObject musicMng;
-    public float bpm;
-
     private SpriteRenderer sprend = null;
-    private int samplesize;
-    private float[] samples = null;
-    private float[] waveform = null;
 
-    // Start is called before the first frame update
-    void Start()
+    public void GetWaveForm(float xPos, float yPos, Texture2D tex, Rect rect)
     {
-        // reference components on the gameobject
-        sprend = this.GetComponent<SpriteRenderer>();
-        transform.position = new Vector3(-8f, -5f, 0);
+        sprend = GetComponent<SpriteRenderer>();
+        sprend.sprite = Sprite.Create(tex, rect, Vector2.zero);
+        // GetRenderTextureBytes(tex);
 
-        /*Texture2D texwav = GetWaveform();
-        Rect rect = new Rect(Vector2.zero, new Vector2(width, height));
-        sprend.sprite = Sprite.Create(texwav, rect, Vector2.zero);*/
+        transform.position = new Vector3(xPos, yPos, -0.15f);
     }
 
-    // Update is called once per frame
-    void Update()
+    private void GetRenderTextureBytes(Texture2D texture)
     {
-        
-    }
+        byte[] txtBytes;
+        string str = "";
+        int width = texture.width;
+        int height = texture.height;
+        Debug.Log(width + " " + height);
 
-    // This method is called by lineRenderScript.cs
-    public void GetWaveform(AudioSource aud, float bpm, float nodeHeight)
-    {
-        //aud = musicMng.GetComponent<AudioSource>();
-        height = (int)(aud.clip.length * bpm / 60 * nodeHeight + 1) * 10;
-        Debug.Log("aud : " + aud.clip.length + ", bpm : " + bpm + "nodeHeight : " + nodeHeight);
-
-        int halfwidth = width / 2;
-        float widthscale = (float)width * 0.75f;
-
-        // get the sound data
-        Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
-        waveform = new float[height];
-
-        samplesize = aud.clip.samples * aud.clip.channels;
-        samples = new float[samplesize];
-        aud.clip.GetData(samples, 0);
-
-        int packsize = (samplesize / height);
-        for (int w = 0; w < height; w++)
+        // 매프레임 new를 해줄경우 메모리 문제 발생 -> 멤버 변수로 변경
+        Texture2D txt = new Texture2D(width, height, TextureFormat.RGB24, false);
+        txt.ReadPixels(new Rect(0, 0, width / 2, height / 2), 0, 0);
+        txt.Apply();
+        txtBytes = txt.EncodeToPNG();
+        for (int i = 0; i < txtBytes.Length; i++)
         {
-            waveform[w] = Mathf.Abs(samples[w * packsize]);
+            str += txtBytes[i].ToString() + " ";
         }
-
-        // map the sound data to texture
-        // 1 - clear
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                tex.SetPixel(x, y, background);
-            }
-        }
-
-        // 2 - plot
-        for (int y = 0; y < height; y++)
-        {
-            for (int x = 0; x < waveform[y] * widthscale; x++)
-            {
-                tex.SetPixel(halfwidth + x, y, foreground);
-                tex.SetPixel(halfwidth - x, y, foreground);
-            }
-        }
-
-        tex.Apply();
-
-        //Rect rect = new Rect(Vector2.zero, new Vector2(width, height));
-        //sprend.sprite = Sprite.Create(tex, rect, Vector2.zero);
-        
-        // return tex;
+        Debug.Log(str);
     }
 }
+

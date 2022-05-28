@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class fpsCheckScript : MonoBehaviour
+public class FpsCheckScript : MonoBehaviour
 {
     [Range(1, 100)]
     public int fFont_Size;

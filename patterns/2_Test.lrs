@@ -1,0 +1,9 @@
+*Header
+#BGM 2
+#BPM 119.6
+#OFFSET 30
+
+#SETBPM 48 100
+#SETBPM 67 119.6
+*NoteData
+

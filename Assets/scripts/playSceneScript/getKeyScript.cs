@@ -6,12 +6,12 @@ public class getKeyScript : MonoBehaviour
 {
     string[] keys = { "s", "d", "f", "j", "k", "l" };
     public GameObject noteManagerObj;
-    noteCreate noteManager;
+    NoteCreate noteManager;
 
     // Start is called before the first frame update
     void Start()
     {
-        noteManager = noteManagerObj.GetComponent<noteCreate>();
+        noteManager = noteManagerObj.GetComponent<NoteCreate>();
     }
 
     // Update is called once per frame
@@ -22,13 +22,12 @@ public class getKeyScript : MonoBehaviour
             string key = keys[line];
             if (Input.GetKeyDown(key))
             {
-                Debug.Log(key);
-                int pos = noteManager.notePos[line];
-                try
+                int pos = NoteContainer.notePos[line];
+                if (pos < NoteContainer.noteStack[line].Count)
                 {
-                    noteManager.noteStack[line][pos].GetComponent<noteMovement>().keyDown();
+                    NoteContainer.noteStack[line][pos].keyDown(key);
                 }
-                catch
+                else
                 {
                     Debug.Log("no note");
                 }

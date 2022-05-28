@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class editMetronomeScript : MonoBehaviour
+public class EditMetronomeScript : MonoBehaviour
 {
     AudioSource mSource;
     public AudioClip tik;

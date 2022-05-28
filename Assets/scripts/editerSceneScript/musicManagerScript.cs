@@ -4,74 +4,44 @@ using UnityEngine;
 using UnityEngine.UI;
 using System;
 
-public class musicManagerScript : MonoBehaviour
+public class MusicManagerScript : MonoBehaviour
 {
     AudioSource mSource;
 
     public AudioClip[] musics;
-    float[] bpms;
-    int[] Offsets;
-    [SerializeField] InputField offsetInput;
-    [SerializeField] InputField bpmInput;
-    [SerializeField] InputField beatInput;
-    [SerializeField] InputField nodeInput;
-    [SerializeField] Button playButton;
-    [SerializeField] Button stopButton;
+    [HideInInspector] public float bpm = 120f;
+    [HideInInspector] public int Offset = 0;
+    [SerializeField] InputField offsetInput, bpmInput, beatInput, speedInput;
+    [SerializeField] Button playButton, stopButton;
     [SerializeField] Dropdown musicList;
-    int selectedMusic = 0;
+    [SerializeField] Toggle metronomeToggle;
+    [HideInInspector] public int selectedMusic = 0;
     bool playStatus = false;
 
     [SerializeField] GameObject metronome;
     AudioSource metAudioSource;
     [SerializeField] GameObject gridObj;
-    lineRenderScript gridScript;
-    float tikTime;
-    float nextTime;
+    LineRenderScript gridScript;
+    float musicSpeed = 1f;
+    int currentNode = -1;
 
     // Start is called before the first frame update
     void Start()
     {
-
-        bpms = new float[10]
-        {
-            144f,
-            120f,
-            142f,
-            149.5f,
-            120f,
-            120f,
-            120f,
-            120f,
-            120f,
-            120f
-        };
-        Offsets = new int[10]
-        {
-            60,
-            0,
-            49,
-            34,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        };
-
         mSource = GetComponent<AudioSource>();
         mSource.clip = musics[selectedMusic];
-        settingReload();
+        SettingReload();
 
-        bpmInput.onSubmit.AddListener(delegate { setBpm(); });
-        offsetInput.onSubmit.AddListener(delegate { setOffset(); });
-        playButton.onClick.AddListener(delegate { musicPlay(); });
-        stopButton.onClick.AddListener(delegate { musicStop(); });
+        bpmInput.onSubmit.AddListener(delegate { SetBpm(); });
+        offsetInput.onSubmit.AddListener(delegate { SetOffset(); });
+        speedInput.onSubmit.AddListener(delegate { SetSpeed(); });
+        playButton.onClick.AddListener(delegate { MusicPlay(); });
+        stopButton.onClick.AddListener(delegate { MusicStop(); });
         musicList.onValueChanged.AddListener(delegate { SelectMusic(); });
 
         metAudioSource = metronome.GetComponent<AudioSource>();
 
-        gridScript = gridObj.GetComponent<lineRenderScript>();
+        gridScript = gridObj.GetComponent<LineRenderScript>();
     }
 
     // Update is called once per frame
@@ -80,73 +50,121 @@ public class musicManagerScript : MonoBehaviour
         if (mSource.isPlaying)
         {
             float playTime = mSource.time;
-            if (playTime > nextTime)
+            if (currentNode + 1 < gridScript.nodeList.Count)
             {
-                metAudioSource.Play();
-                nextTime += tikTime;
+                if ((playTime - (Offset * 0.001f)) * gridScript.playScrollSpeed >= gridScript.nodeList[currentNode + 1].offset)
+                {
+                    if (metronomeToggle.isOn)
+                        metAudioSource.Play();
+                    currentNode++;
+                }
             }
         }
     }
 
-    void setBpm()
+    void SetBpm()
     {
         if (float.TryParse(bpmInput.text, out float _bpm))
         {
-            Debug.Log(_bpm);
-            bpms[selectedMusic] = _bpm;
-            tikTime = 60f / bpms[selectedMusic];
+            bpm = _bpm;
         }
     }
 
-    void setOffset()
+    void SetOffset()
     {
         if (Int32.TryParse(offsetInput.text, out int _offset))
         {
-            Debug.Log(_offset);
-            Offsets[selectedMusic] = _offset;
-            nextTime = Offsets[selectedMusic] * 0.001f;
+            Offset = _offset;
         }
     }
 
-    void musicPlay()
+    void SetSpeed()
     {
-        if (playStatus == false)
+        if (float.TryParse(speedInput.text, out float _speed))
         {
-            mSource.Play();
-            playStatus = true;
+            musicSpeed = _speed;
         }
-        else
+    }
+
+    void MusicPlay()
+    {
+        if (selectedMusic > 0)
         {
-            mSource.Pause();
-            playStatus = false;
+            if (playStatus == false)
+            {
+                // 재생 시점
+                float playPoint = -(gridScript.yOffset / gridScript.playScrollSpeed);
+                mSource.time = playPoint;
+                mSource.Play();
+                playStatus = true;
+
+                // 현재 노드
+                // yOffset으로 계산 가능한데 그래도 nodeOffset을 고려해야 하기 때문에 그냥 계산함
+                float currentPoint = (mSource.time - (Offset * 0.001f)) * gridScript.playScrollSpeed;
+                int i;
+                for (i = 0; i < gridScript.nodeList.Count; i++)
+                {
+                    if (currentPoint < gridScript.nodeList[i].offset)
+                    {
+                        currentNode = i - 1;
+                        break;
+                    }
+                }
+                if (i == gridScript.nodeList.Count)
+                    currentNode = i - 1;
+            }
+            else
+            {
+                mSource.Pause();
+                playStatus = false;
+            }
         }
         
     }
 
-    void musicStop()
+    void MusicStop()
     {
-        mSource.Stop();
-        playStatus = false;
-        nextTime = 0f;
-        gridScript.yOffset = 0;
-        gridScript.noteRelocate();
+        if (selectedMusic > 0)
+        {
+            mSource.Stop();
+            playStatus = false;
+            gridScript.yOffset = 0;
+            gridScript.NoteRelocate();
+            gridScript.RenewSpectrum();
+            // gridScript.ListMove();
+            gridScript.NodeNumberReset();
+        }
     }
 
     void SelectMusic()
     {
-        musicStop();
-        selectedMusic = musicList.value;
-        mSource.clip = musics[selectedMusic];
-        settingReload();
+        if (musicList.value > 0)
+        {
+            if (selectedMusic != musicList.value)
+            {
+                selectedMusic = musicList.value;
+                mSource.clip = musics[selectedMusic];
+                SettingReload();
+                gridScript.GridReset();
+                gridScript.MakeSpectrum();
+            }
+        }
+        MusicStop();
     }
 
-    void settingReload()
+    void SettingReload()
     {
-        bpmInput.text = bpms[selectedMusic].ToString();
+        bpmInput.text = "120";
         beatInput.text = "4";
-        offsetInput.text = Offsets[selectedMusic].ToString();
+        offsetInput.text = "0";
+    }
 
-        tikTime = 60f / bpms[selectedMusic];
-        nextTime = Offsets[selectedMusic] / 1000;
+    public void musicReset()
+    {
+        SetBpm();
+        SetOffset();
+        MusicStop();
+        selectedMusic = musicList.value;
+        mSource.clip = musics[selectedMusic];
     }
 }
