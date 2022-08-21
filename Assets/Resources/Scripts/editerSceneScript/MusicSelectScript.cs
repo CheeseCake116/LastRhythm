@@ -22,6 +22,8 @@ public class MusicSelectScript : MonoBehaviour
         "대화 2",
         "대화 3",
         "대화 4",
+        "사랑은 파르페",
+        "사랑은 파르페_inst",
     };
     AudioClip[] musics;
 

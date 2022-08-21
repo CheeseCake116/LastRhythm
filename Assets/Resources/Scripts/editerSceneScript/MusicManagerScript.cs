@@ -60,6 +60,11 @@ public class MusicManagerScript : MonoBehaviour
                 }
             }
         }
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            MusicPlay();
+        }
     }
 
     void SetBpm()
@@ -94,6 +99,7 @@ public class MusicManagerScript : MonoBehaviour
             {
                 // 재생 시점
                 float playPoint = -(gridScript.yOffset / gridScript.playScrollSpeed);
+                Debug.Log("playpoint : " + playPoint);
                 mSource.time = playPoint;
                 mSource.Play();
                 playStatus = true;

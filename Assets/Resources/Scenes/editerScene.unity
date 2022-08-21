@@ -5161,6 +5161,7 @@ MonoBehaviour:
   longNoteToggle: {fileID: 1430916671}
   noteSoundToggle: {fileID: 1779807304}
   nodeNumberObj: {fileID: 6672057900649407813, guid: 6c7b3412916ce70438a1a55109b97bd0, type: 3}
+  zoom: 1
   selectedNote: {fileID: 0}
   selectedNode: -1
   mSource: {fileID: 0}
@@ -7383,6 +7384,8 @@ MonoBehaviour:
   - {fileID: 8300000, guid: c01f4722746da61488203671c288763d, type: 3}
   - {fileID: 8300000, guid: 2a7c110ae57067b4391b4a4fa489eafb, type: 3}
   - {fileID: 8300000, guid: 6d4904a71344bc449a681a79db328fe5, type: 3}
+  - {fileID: 8300000, guid: 1cf4b4074b4f71b4d962ba5515509e70, type: 3}
+  - {fileID: 8300000, guid: d760d21101742654da060ad0d8449ce9, type: 3}
   bpm: 120
   Offset: 0
   offsetInput: {fileID: 222976576}
@@ -7681,7 +7684,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0d923cb4dd793e644a07cf8e67581073, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tik: {fileID: 8300000, guid: 397b8696908484a409517c740300b6e1, type: 3}
+  tik: {fileID: 8300000, guid: b17b154cbab18994eb2ca97e794c3083, type: 3}
 --- !u!82 &1891376032
 AudioSource:
   m_ObjectHideFlags: 0
